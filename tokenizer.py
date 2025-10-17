@@ -2,6 +2,32 @@ import urllib.request
 import os
 import tempfile
 
+class Tokenizer():
+  def __init__(self, file_path):
+    file_path = get_or_download_file(file_path)
+    self.file_path = file_path
+    self.encoder = {}
+    self.decoder = {}
+    self.initialize_encoder_decoder()
+  
+  def encode(self, text):
+    return [self.encoder[ch] for ch in text]
+
+  def decode(self, data):
+    return ''.join([self.decoder[i] for i in data])
+
+
+  def initialize_encoder_decoder(self):
+    file = get_or_download_file(self.file_path)
+
+    with open(file, "r", encoding="utf-8") as f:
+      content = f.read()
+      vocab = list(set(content))
+      vocab.sort()
+
+      self.encoder = {ch: i for i, ch in enumerate(vocab)}
+      self.decoder = {i: ch for i, ch in enumerate(vocab)}
+
 def get_or_download_file(file_path):
   if os.path.exists(file_path):
     return file_path
@@ -14,29 +40,3 @@ def get_or_download_file(file_path):
     urllib.request.urlretrieve(url, temp_file_path)
 
   return temp_file_path
-
-def initialize_tokenizer():
-  file = get_or_download_file("/tmp/input.txt")
-
-  ctoi = {}
-  itoc = {}
-
-  with open(file, "r", encoding="utf-8") as f:
-    content = f.read()
-    vocab = list(set(content))
-    vocab.sort()
-
-    ctoi = {ch: i for i, ch in enumerate(vocab)}
-    itoc = {i: ch for i, ch in enumerate(vocab)}
-
-    output = []
-    for c in content:
-      output.append(ctoi[c])
-
-
-
-def main():
-  encoder = initialize_tokenizer()
-
-if __name__ == "__main__":
-  main()

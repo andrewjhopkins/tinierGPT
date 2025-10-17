@@ -9,12 +9,13 @@ class Tokenizer():
     self.encoder = {}
     self.decoder = {}
     self.initialize_encoder_decoder()
+    self.vocab_size = len(self.encoder)
   
   def encode(self, text):
     return [self.encoder[ch] for ch in text]
 
-  def decode(self, data):
-    return ''.join([self.decoder[i] for i in data])
+  def decode(self, tokens):
+    return ''.join([self.decoder[i] for i in tokens])
 
 
   def initialize_encoder_decoder(self):

@@ -2,23 +2,15 @@ import torch
 import torch.nn as nn
 from torch.nn import functional as F
 
-batch_size = 10
-block_size = 32
-embedding_size = 64
-vocab_size = 1234 # change this to tokenizer vocab size
-n_head = 3
-n_layer = 3
-
 class Model(nn.Module):
-    def __init__(self):
+    def __init__(self, vocab_size, embedding_size, block_size, n_head, n_layer):
         super().__init__()
-
         self.token_embedding_table = nn.Embedding(vocab_size, embedding_size)
         self.position_embedding_table = nn.Embedding(block_size, embedding_size)
         self.blocks = nn.Sequential(*[Block(embedding_size, n_head, block_size) for _ in range(n_layer)])
         self.ln_f = nn.LayerNorm(embedding_size)
         self.lm_head = nn.Linear(embedding_size, vocab_size, bias=False)
-
+    
     def forward(self, idx, targets=None):
         batch, time = idx.shape
         tok_emb = self.token_embedding_table(idx)
@@ -60,9 +52,9 @@ class FeedForward(nn.Module):
     def __init__(self, n_embd):
         super().__init__()
         self.net = nn.Sequential(
-            nn.Linear(embedding_size, 4 * embedding_size),
+            nn.Linear(n_embd, 4 * n_embd),
             nn.ReLU(),
-            nn.Linear(4 * embedding_size, embedding_size)
+            nn.Linear(4 * n_embd, n_embd)
         )
     
     def forward(self, x):
@@ -75,7 +67,7 @@ class MultiHeadAttention(nn.Module):
         self.proj = nn.Linear(n_embd, n_embd)
     
     def forward(self, x):
-        out = torch.cat([h(x) for h in self.heads], dim=-1)
+        out = torch.cat([h(x) for h in self.head], dim=-1)
         out = self.proj(out)
         return out
 
@@ -94,7 +86,7 @@ class Head(nn.Module):
         q = self.queries(x)
         wei = q @ k.transpose(-2, -1) * channels ** -0.5
 
-        wei = wei.masked_fill(self.trill[:time, :time] == 0, float("-inf"))
+        wei = wei.masked_fill(self.tril[:time, :time] == 0, float("-inf"))
         wei = F.softmax(wei, dim=-1)
 
         v = self.values(x)
